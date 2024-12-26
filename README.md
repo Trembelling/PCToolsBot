@@ -77,6 +77,4 @@ PCToolsBot - это программа на Python, созданная для п
 - Телеграм канал: [@devFRAME](https://t.me/+BG1-5ebkjUVjYjNi)
 - Старый телеграм канал: [FRAMEDEV](https://t.me/+VHwM4LtIRvXJIqol)
 
-## Поддержать
-- CloudTips(Карта): https://pay.cloudtips.ru/p/105e5b0a
-- XMR: ```8AsjFH383uoCE5PNn1dhYzi3dkUfw6Cjs888Y5NTSCz918eszCApp6bZWiphfkBgswYSsayDxr9zmJpfywe9N6wS2ffSEam```
+
