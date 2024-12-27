@@ -7,6 +7,8 @@ import ctypes
 import mouse
 import PIL.ImageGrab
 import cv2
+import json
+import tkinter as tk
 from PIL import Image, ImageGrab, ImageDraw
 from pySmartDL import SmartDL
 from telebot import types
@@ -20,6 +22,8 @@ from telebot import apihelper
 #apihelper.proxy = {'https': 'http://proxy:port'}
 
 
+#Исходный вариант кода
+'''
 my_id = 123456789
 bot_token = '1234567:ASDFGHJKLQWERTY'
 bot = telebot.TeleBot(bot_token)
@@ -32,6 +36,85 @@ class User:
 			self.key = None
 
 User.curs = 50
+'''
+
+
+#2 Вариант
+cfg_file = "config.json"
+my_id = None
+bot_token = None
+
+def id_user_tg():
+	global my_id, bot_token
+	webbrowser.open('https://web.telegram.org/k/#@getmyid_bot')
+	window = tk.Tk()
+	window.title('PC_BOT')
+	window.geometry('500x400')
+	window.resizable(width=False, height=False)
+
+	label = tk.Label(text='Введите свой Telegram id:', bg='White', fg='Black', font='TNR 14')
+	label.place(x=50, y=25)
+
+	label1 = tk.Label(text='Введите токен своего бота Telegram:', bg='White', fg='Black', font='TNR 14')
+	label1.place(x=50, y=200)
+
+	frame1 = tk.Frame(window, width=400, height=400)
+	frame1.place(x=50, y=250)
+	ent1 = tk.Entry(frame1, font='TNR 10', bg='white', fg='black', width=90)
+	ent1.place(x=0, y=0)
+
+	frame = tk.Frame(window, width=200, height=100)
+	ent_var = tk.StringVar()
+	ent = tk.Entry(frame, textvariable=ent_var, font='TNR 14', bg='white', fg='black', width=15)
+
+	btn = tk.Button(frame1, text='Ввод', font='TNR 14', bg='white', fg='black', command=lambda: enter_data(ent_var.get(), ent1.get(), window))
+    
+	frame.place(x=25, y=65)
+	ent.place(x=25, y=0)
+	btn.place(x=150, y=50)
+        
+	window.bind('<Return>', lambda event: enter_data(ent_var.get(), ent1.get(), window))
+	window.mainloop()
+
+
+def enter_data(my_id_input, bot_token_input, window):
+    global my_id, bot_token
+    my_id = my_id_input
+    bot_token = bot_token_input
+    save_my_id()  
+    window.destroy()  
+    initialize_bot() 
+
+
+def save_my_id():
+    with open(cfg_file, 'w') as f:
+        json.dump({"my_id": my_id, "bot_token": bot_token}, f)  
+def load_my_id():
+    global my_id, bot_token
+    if os.path.exists(cfg_file):
+        with open(cfg_file, 'r') as f:
+            config = json.load(f)
+            my_id = config.get("my_id")
+            bot_token = config.get("bot_token")
+    else:
+        id_user_tg()  
+
+def initialize_bot():
+    global bot
+    bot = telebot.TeleBot(bot_token)  
+load_my_id()
+
+
+if my_id is None or bot_token is None:
+    id_user_tg()
+else:
+    initialize_bot()  
+
+load_my_id()
+
+
+
+
 
 
 ##Клавиатура меню
@@ -114,17 +197,14 @@ _⬇️Скачать файл_ - скачивает указанный файл
 _⬆️Загрузить файл_ - загружает файл на ваш компьютер
 _🔗Загрузить по ссылке_ - загружает файл на ваш компьютер по прямой ссылке
 
-*Сайт разработчика:* [okronix.ru](https://okronix.ru)
-*Телеграм канал разработчика:* [@devFRAME](https://t.me/+fsTXjnEspow3YmUy)
-*Репозиторий GitHub:* [КЛИК](https://github.com/Okronix/PCToolsBot)
-*Поддержать разработчика:* [КЛИК](https://pay.cloudtips.ru/p/105e5b0a)
+*Репозиторий GitHub:* [КЛИК](https://github.com/Trembelling/PCToolsBot)
 '''
 
 MessageBox = ctypes.windll.user32.MessageBoxW
 if os.path.exists("msg.pt"):
 	pass
 else:
-	bot.send_message(my_id, "Спасибо, что выбрали данного Бота!\nСоветую сначала прочитать все в меню \"❗️Информация\"\n\n*Телеграм канал разработчика:* [@devFRAME](https://t.me/+5SHcAW68EoZjN2Vi)\n*Репозиторий GitHub:* [КЛИК](https://github.com/Okronix/PCToolsBot)\n*Поддержать разработчика:* [КЛИК](https://pay.cloudtips.ru/p/105e5b0a)", parse_mode = "markdown")
+	bot.send_message(my_id, "Спасибо, что выбрали данного Бота!\nСоветую сначала прочитать все в меню \"❗️Информация\"\n\n*Репозиторий GitHub:* [КЛИК](https://github.com/Trembelling/PCToolsBot)")
 	MessageBox(None, f'На вашем ПК запущена программа PC Tools Bot для управления компьютером\nДанное сообщения является разовым', '!ВНИМАНИЕ!', 0)
 	f = open('msg.pt', 'tw', encoding='utf-8')
 	f.close
