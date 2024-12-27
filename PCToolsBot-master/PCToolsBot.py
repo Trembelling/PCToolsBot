@@ -15,6 +15,7 @@ from PIL import Image, ImageGrab, ImageDraw
 from pySmartDL import SmartDL
 from telebot import types
 from telebot import apihelper
+from psutil import process_iter
 
 
 ######Примеры прокси
@@ -155,11 +156,12 @@ btncmd = types.KeyboardButton('✅Выполнить команду')
 btnoff = types.KeyboardButton('⛔️Выключить компьютер')
 btnreb = types.KeyboardButton('♻️Перезагрузить компьютер')
 btnpaste = types.KeyboardButton('📃Вставить текст')
+btnprocceses = types.KeyboardButton("Процессы")
 btninfo = types.KeyboardButton('🖥О компьютере')
 btnback = types.KeyboardButton('⏪Назад⏪')
 additionals_keyboard.row(btnoff, btnreb)
 additionals_keyboard.row(btncmd, btnweb)
-additionals_keyboard.row(btnpaste)
+additionals_keyboard.row(btnpaste, btnprocceses)
 additionals_keyboard.row(btninfo, btnback)
 
 
@@ -208,7 +210,7 @@ MessageBox = ctypes.windll.user32.MessageBoxW
 if os.path.exists("msg.pt"):
 	pass
 else:
-	bot.send_message(my_id, "Спасибо, что выбрали данного Бота!\nСоветую сначала прочитать все в меню \"❗️Информация\"\n\n*Репозиторий GitHub:* [КЛИК](https://github.com/Trembelling/PCToolsBot)")
+	bot.send_message(my_id, "Спасибо, что выбрали данного Бота!\nСоветую сначала прочитать все в меню \"❗️Информация\"\n\n*Репозиторий GitHub:* [КЛИК](https://github.com/Trembelling/PCToolsBot)", parse_mode = "markdown")
 	MessageBox(None, f'На вашем ПК запущена программа PC Tools Bot для управления компьютером\nДанное сообщения является разовым', '!ВНИМАНИЕ!', 0)
 	f = open('msg.pt', 'tw', encoding='utf-8')
 	f.close
@@ -303,6 +305,44 @@ def addons_process(message):
 		elif message.text == "📃Вставить текст":
 			bot.send_message(my_id, "Укажите текст: ")
 			bot.register_next_step_handler(message, paste_text)
+
+		elif message.text == "Процессы":
+			bot.send_chat_action(my_id, 'typing')
+            # Получаем список процессов
+			processes_names = {process.name() for process in process_iter()}
+			elements_to_remove = {
+                'System', 
+                'System Idle Process', 
+                'taskhostw.exe', 
+                'svchost.exe', 
+                'csrss.exe', 
+                'RuntimeBroker.exe', 
+                'Registry', 
+                'services.exe', 
+                'wininit.exe', 
+                'winlogon.exe', 
+                'dllhost.exe', 
+                'powershell.exe', 
+                'conhost.exe', 
+                'explorer.exe', 
+                'sihost.exe'
+            }
+                
+                
+			for element in elements_to_remove:
+				processes_names.discard(element)
+                
+                
+			sorted_processes = sorted(processes_names)
+			numbered_processes = '\n'.join(f"{i + 1}. {process}" for i, process in enumerate(sorted_processes))
+
+                
+			bot.send_message(my_id, numbered_processes)
+                
+                
+			bot.send_message(my_id, 'Хотите ли вы завершить какой-нибудь процесс? (да/нет)')
+			bot.register_next_step_handler(message, confirm_kill_process)  
+			bot.register_next_step_handler(message, addons_process)
 
 		elif message.text == "🖥О компьютере":
 			req = requests.get('https://api.ipify.org')
@@ -451,6 +491,70 @@ def paste_text(message):
     pyautogui.hotkey('ctrl', 'v')  
     bot.send_message(my_id, f"Текст \"{text_to_paste}\" вставлен в активное поле ввода.")
     bot.register_next_step_handler(message, addons_process)
+
+def confirm_kill_process(message):
+    if str(message.from_user.id) == my_id:
+        response = message.text.strip().lower()
+        
+        if response == 'да':
+            bot.send_message(my_id, 'Укажите номер процесса, который хотите завершить:')
+            bot.register_next_step_handler(message, kill_process_by_number)  # Переход к функции завершения процесса по номеру
+        elif response == 'нет':
+            bot.send_message(my_id, 'Вы решили не завершать процессы. Возвращаемся в главное меню.')
+            back(message)  # Возвращаемся в главное меню
+        else:
+            bot.send_message(my_id, 'Пожалуйста, ответьте "да" или "нет".')
+            bot.register_next_step_handler(message, confirm_kill_process)  # Повторяем запрос
+
+def kill_process_by_number(message):
+    if str(message.from_user.id) == my_id:
+        bot.send_chat_action(my_id, 'typing')
+        process_number = message.text.strip()  # Получаем ввод пользователя
+        
+        if process_number.isdigit():
+            process_number = int(process_number) - 1  # Преобразуем в индекс (0-индексация)
+            processes_names = {process.name() for process in process_iter()}
+            elements_to_remove = {
+                'System', 
+                'System Idle Process', 
+                'taskhostw.exe', 
+                'svchost.exe', 
+                'csrss.exe', 
+                'RuntimeBroker.exe', 
+                'Registry', 
+                'services.exe', 
+                'wininit.exe', 
+                'winlogon.exe', 
+                'dllhost.exe', 
+                'powershell.exe', 
+                'conhost.exe', 
+                'explorer.exe', 
+                'sihost.exe'
+            }
+            
+            # Удаляем системные процессы из списка
+            for element in elements_to_remove:
+                processes_names.discard(element)
+            
+            sorted_processes = sorted(processes_names)
+            
+            if 0 <= process_number < len(sorted_processes):
+                process_to_kill = sorted_processes[process_number]
+                try:
+                    # Завершаем процесс по имени
+                    for proc in process_iter():
+                        if proc.name() == process_to_kill:
+                            proc.terminate()  # Завершаем процесс
+                            bot.send_message(my_id, f"Процесс '{process_to_kill}' был завершен.")
+                            return
+                except Exception as e:
+                    bot.send_message(my_id, f"Ошибка при завершении процесса: {str(e)}")
+            else:
+                bot.send_message(my_id, "Неверный номер процесса. Пожалуйста, попробуйте снова.")
+                bot.register_next_step_handler(message, kill_process_by_number)  # Повторяем запрос
+        else:
+            bot.send_message(my_id, "Пожалуйста, введите номер процесса.")
+            bot.register_next_step_handler(message, kill_process_by_number)  # Повторяем запрос
 
 def say_process(message):
 	bot.send_chat_action(my_id, 'typing')
